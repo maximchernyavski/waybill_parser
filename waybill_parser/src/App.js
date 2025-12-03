@@ -1,10 +1,10 @@
 import './App.css';
+import { Mainframe } from './mainframe/mainframe';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-      </header>
+    <div className='app'>
+      <Mainframe />
     </div>
   );
 }
