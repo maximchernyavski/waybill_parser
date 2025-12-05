@@ -7,26 +7,30 @@ export const ActiveText = (props) => {
 
     let defaultStyle = {color:{color}, fontSize:'10pt'}
 
-    if (props?.disabled) {
-        setDisabledState(props.disabled)
+    const handleTextClick = () => {
+        setDisabledState(!disabledState)
     }
 
-    if (props?.style) {
-        defaultStyle = props.style
-        setColor(defaultStyle.color)
-    }
+    // if (props?.disabled) {
+    //     setDisabledState(props.disabled)
+    // }
 
-    useEffect(() => {
-        console.log(disabledState)
-        if(disabledState) {
-            setColor('gray')
-        } else {
-            setColor('black')
-        }
-    }, [disabledState])
+    // if (props?.style) {
+    //     defaultStyle = props.style
+    //     setColor(defaultStyle.color)
+    // }
+
+    // useEffect(() => {
+    //     console.log(disabledState)
+    //     if(disabledState) {
+    //         setColor('gray')
+    //     } else {
+    //         setColor('black')
+    //     }
+    // }, [])
 
     return (
-        <Typography.Text style={defaultStyle} disabled={disabledState}>
+        <Typography.Text style={defaultStyle} disabled={disabledState} onClick={handleTextClick}>
             {props.children}
         </Typography.Text>
     )
