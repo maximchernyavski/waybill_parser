@@ -1,53 +1,44 @@
 package PictureTuner
 
 import (
-	"image"
+	"fmt"
 	"log"
-	Misc "waybil_parser/model/misc"
 
-	"github.com/disintegration/imaging"
-	"github.com/otiai10/gosseract"
+	"gocv.io/x/gocv"
 )
 
 func PrepareImprovedImage(picturePath string) {
-	srcImg, err := imaging.Open(picturePath)
-	if err != nil {
-		log.Fatalf("Failed to open image: %v", err)
+	deskew(picturePath)
+
+	img := gocv.IMRead("final_deskewed.jpg", gocv.IMReadColor)
+	if img.Empty() {
+		log.Fatal("Could not read image")
 	}
+	defer img.Close()
 
-	img := adjustImage(srcImg)
+	binarizeForTesseract(&img)
 
-	client := gosseract.NewClient()
-	defer client.Close()
-
-	if err := client.SetLanguage("eng", "rus"); err != nil {
-		log.Fatalf("Error setting language: %v", err)
-	}
-
-	// 3. Convert image to bytes for Tesseract
-	// (Reusing the helper from previous examples)
-	imgBytes := Misc.ImgToBytes(img)
-	client.SetImageFromBytes(imgBytes)
-
-	// 3. (Optional) Save the processed image to check if it looks better
-	//    This helps you debug if your settings (40, 0.5) are correct.
-	err = imaging.Save(img, "debug_processed.png")
-	if err != nil {
-		log.Fatalf("Failed to save debug image: %v", err)
+	isWritten := gocv.IMWrite("final_deskewed.jpg", img)
+	if !isWritten {
+		fmt.Println("File was not saved")
+		log.Fatal("Can't write file")
 	}
 }
 
-func adjustImage(image image.Image) image.Image {
-	//    This removes color noise. Tesseract works best on B&W or Grayscale.
-	image = imaging.Grayscale(image)
+func binarizeForTesseract(mat *gocv.Mat) {
+	// Convert to grayscale if not already
+	if mat.Channels() > 1 {
+		tmp := gocv.NewMat()
+		gocv.CvtColor(*mat, &tmp, gocv.ColorBGRToGray)
+		mat.Close()
+		*mat = tmp
+	}
 
-	//    Value ranges from -100 to 100.
-	//    Try values between 20 and 50. If it's very blurry, try higher.
-	image = imaging.AdjustContrast(image, 40)
+	// Apply simple binary thresholding or adaptive
+	// Simple is often better if lighting is even (scanned docs)
+	// 180 is a safe bet for dark text on white paper
+	gocv.Threshold(*mat, mat, 200, 255, gocv.ThresholdBinary)
 
-	//    Helps if the image is slightly out of focus.
-	//    Sigma values around 0.5 to 2.0 usually work well.
-	image = imaging.Sharpen(image, 0.5)
-
-	return image
+	// OR if you have shadows/uneven light, use Adaptive again:
+	// gocv.AdaptiveThreshold(*mat, mat, 255, gocv.AdaptiveThresholdGaussian, gocv.ThresholdBinary, 11, 2)
 }
