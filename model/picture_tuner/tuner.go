@@ -4,23 +4,38 @@ import (
 	"fmt"
 	"image"
 	"log"
+	"os"
 
 	"gocv.io/x/gocv"
 )
 
 func PrepareImprovedImage(picturePath string) {
-	deskew(picturePath)
-
-	img := gocv.IMRead("final_deskewed.jpg", gocv.IMReadColor)
+	img := gocv.IMRead(picturePath, gocv.IMReadColor)
 	if img.Empty() {
 		log.Fatal("Could not read image")
 	}
 	defer img.Close()
 
+	img = fixOrientation(img)
+	// img = gocv.IMRead("fixed_rotation.bmp", gocv.IMReadColor)
+	// if img.Empty() {
+	// 	log.Fatal("Could not read image")
+	// }
+	deskew(&img)
+
+	img = gocv.IMRead("final_deskewed.bmp", gocv.IMReadColor)
+	if img.Empty() {
+		log.Fatal("Could not read image")
+	}
+	err := os.Remove("fixed_rotation.bmp")
+	if err != nil {
+		log.Fatal("Can't remove rotation file")
+	}
+
 	binarizeForTesseract(&img)
 	healGaps(&img)
 
-	isWritten := gocv.IMWrite("final_deskewed.jpg", img)
+	isWritten := gocv.IMWrite("final_deskewed.bmp", img)
 	if !isWritten {
 		fmt.Println("Another file")
 		fmt.Println("File was not saved")
