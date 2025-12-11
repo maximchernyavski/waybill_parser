@@ -4,21 +4,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"log"
 	"math"
 	"sort"
 
 	"gocv.io/x/gocv"
 )
 
-func deskew(imgPath string) {
-	// 1. Load Image
-	img := gocv.IMRead(imgPath, gocv.IMReadColor)
-	if img.Empty() {
-		log.Fatal("Could not read image")
-	}
-	defer img.Close()
-
+func deskew(img *gocv.Mat) {
 	// 2. Iterative Deskew Loop
 	// We allow up to 3 passes. Usually 2 is enough.
 	// Rotating more than 3 times degrades image quality (blurriness).
@@ -26,7 +18,7 @@ func deskew(imgPath string) {
 	minAngleThreshold := 0.1 // If skew is less than 0.1 degrees, stop.
 
 	for i := 0; i < maxIterations; i++ {
-		angle := calculateSkewAngle(&img)
+		angle := calculateSkewAngle(img)
 
 		fmt.Printf("Pass %d: Detected Skew: %.4f degrees\n", i+1, angle)
 
@@ -37,10 +29,10 @@ func deskew(imgPath string) {
 		}
 
 		// Rotate the image in-place
-		rotateImage(&img, angle)
+		rotateImage(img, angle)
 	}
 
-	gocv.IMWrite("final_deskewed.jpg", img)
+	gocv.IMWrite("final_deskewed.bmp", *img)
 }
 
 // rotateImage applies the rotation and updates the Mat pointer
