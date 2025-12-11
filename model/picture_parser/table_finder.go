@@ -72,7 +72,7 @@ func FindTable(imgPath string) {
 		fmt.Printf("Cell %d: Pos: (%d, %d) Size: %dx%d\n", i, rect.Min.X, rect.Min.Y, rect.Dx(), rect.Dy())
 	}
 
-	gocv.IMWrite("debug_detected_cells.jpg", displayMat)
+	gocv.IMWrite("debug_detected_cells.bmp", displayMat)
 }
 
 func sortCells(cells []image.Rectangle) {
