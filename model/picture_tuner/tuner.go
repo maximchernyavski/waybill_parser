@@ -3,7 +3,6 @@ package PictureTuner
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"gocv.io/x/gocv"
 )
@@ -40,15 +39,6 @@ func PrepareMat(img gocv.Mat) gocv.Mat {
 
 	binarizeForTesseract(&img)
 	healGaps(&img)
-
-	os.Remove("final_deskewed.bmp")
-
-	isWritten := gocv.IMWrite("final_deskewed.png", img)
-	if !isWritten {
-		fmt.Println("Another file")
-		fmt.Println("File was not saved")
-		log.Fatal("Can't write file")
-	}
 
 	return img
 }
