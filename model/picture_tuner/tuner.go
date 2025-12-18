@@ -38,11 +38,6 @@ func PrepareMat(img gocv.Mat) gocv.Mat {
 	img = fixOrientation(img)
 	deskew(&img)
 
-	img = gocv.IMRead("final_deskewed.bmp", gocv.IMReadColor)
-	if img.Empty() {
-		log.Fatal("Could not read image")
-	}
-
 	binarizeForTesseract(&img)
 	healGaps(&img)
 
