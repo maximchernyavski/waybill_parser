@@ -115,7 +115,6 @@ func IsImageSideways(img gocv.Mat) bool {
 
 // getOCRScore rotates the image and calculates a score based on valid words found
 func getOCRScore(img gocv.Mat, angle int) float64 {
-	// 1. Prepare Test Image (Resize Center)
 	testImg := gocv.NewMat()
 	defer testImg.Close()
 
@@ -125,7 +124,6 @@ func getOCRScore(img gocv.Mat, angle int) float64 {
 	}
 	gocv.Resize(img, &testImg, image.Point{0, 0}, scale, scale, gocv.InterpolationLinear)
 
-	// 2. Rotate
 	rotated := gocv.NewMat()
 	switch angle {
 	case 0:
@@ -138,7 +136,6 @@ func getOCRScore(img gocv.Mat, angle int) float64 {
 		gocv.Rotate(testImg, &rotated, gocv.Rotate90CounterClockwise)
 	}
 
-	// 3. OCR
 	client := gosseract.NewClient()
 	defer client.Close()
 
