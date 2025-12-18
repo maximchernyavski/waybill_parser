@@ -13,6 +13,20 @@ func GetData(ctx *context.Context, client *genai.Client, payload []*genai.Part, 
 	promt := `
 You are a forensic document analyzer. You are processing Belarusian Waybills (TTN-1).
 
+### HEADER EXTRACTION RULES (STRICT):
+1. **Locate "Грузополучатель" (Receiver):**
+   - Find the exact printed label: "Грузополучатель:".
+   - The name starts **immediately after** or **below** this label.
+   - **CRITICAL:** Do NOT extract the text next to "Заказчик" (Customer) or "Плательщик" (Payer).
+   - Stop reading the name when you see the address or the UNP number.
+
+2. **Locate "Грузоотправитель" (Sender):**
+   - Find the label "Грузоотправитель:".
+   - Extract the name associated with this specific label.
+
+3. **UNP (Tax ID):** 
+   - Look for the 9-digit number near the extracted Name.
+
 ### INSTRUCTIONS FOR ACCURACY
 1. **Visual Grid Reading:** The "Description/Name" column (Column 2) often contains **multiple lines of text** in a single cell. You MUST read ALL lines in that box (top to bottom) and combine them into a single string.
 2. **Do Not Hallucinate:** If the text is blurry, transcribe what you see visually. Do NOT guess brand names (e.g., do NOT change "ZACATERA" to "Bacardi" just because they look similar).
@@ -38,9 +52,15 @@ You are a forensic document analyzer. You are processing Belarusian Waybills (TT
   "document_header": {
     "document_number": "string",
     "document_date": "string",
-    "sender_name": "string",
-    "receiver_name": "string",
     "total_amount_with_vat": number
+	"sender_info": {
+      "name": "string",
+      "unp": "string (The 9-digit tax ID)"
+    },
+    "receiver_info": {
+      "name": "string",
+      "unp": "string (The 9-digit tax ID)"
+    },
   },
   "items": [
     {
