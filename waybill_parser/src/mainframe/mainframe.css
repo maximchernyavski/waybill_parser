@@ -1,0 +1,40 @@
+#main_logo {
+    width: 100%;
+    padding-top: 1%;
+    padding-left: 1%;
+    padding-right: 1%;
+}
+
+#logo_box {
+    width: 100%;
+    height: 15%;
+    display: flex;
+    justify-content: center;
+    border-right: 1px solid black;
+}
+
+.main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+#topside {
+    width: 90%;
+    height: 5%;
+    border-bottom: 1px solid black;
+}
+
+#sidemenu {
+    width: 18%;
+    height: 100%;
+}
+
+#sidemenu_box {
+    height: 100%;
+    width: 100%;
+    border-right: 1px solid black;
+    padding-top: 15px;
+}
