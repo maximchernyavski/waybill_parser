@@ -11,6 +11,7 @@ import (
 	PictureParser "waybil_parser/model/picture_parser"
 	PictureTuner "waybil_parser/model/picture_tuner"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gocv.io/x/gocv"
@@ -31,7 +32,8 @@ func StartServer(port string) {
 	r := gin.Default()
 
 	// Set max upload size (e.g., 8MB)
-	r.MaxMultipartMemory = 8 << 20
+	r.MaxMultipartMemory = 100 << 20
+	r.Use(cors.Default())
 
 	// 3. Define the Route
 	r.POST("/process-document", handleDocumentUpload)
@@ -86,6 +88,7 @@ func handleDocumentUpload(c *gin.Context) {
 		defer mat.Close()
 
 		mat = PictureTuner.PrepareMat(mat)
+		// gocv.IMWrite(fmt.Sprintf("debug_%d.bmp", i), mat)
 		fileBytesBuff, err := gocv.IMEncode(".png", mat)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to convert file bytes"})
@@ -104,12 +107,15 @@ func handleDocumentUpload(c *gin.Context) {
 	}
 
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{APIKey: apiKey})
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	finalResponse, success := PictureParser.GetData(&ctx, client, parts, "gemini-2.5-flash")
+	finalResponse, success := PictureParser.GetData(&ctx, client, parts, "gemini-3-flash-preview")
 
 	if !success {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Google Gemini API is overloaded or failed. Please try again."})

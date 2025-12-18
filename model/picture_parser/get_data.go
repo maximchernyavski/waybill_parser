@@ -10,36 +10,30 @@ import (
 )
 
 func GetData(ctx *context.Context, client *genai.Client, payload []*genai.Part, model string) (response string, success bool) {
-	promt := `You are an expert document parser for Belarusian/Russian invoicing documents (TN-2 / TTN-1).
-I have provided one or more images representing a single document.
+	promt := `
+You are a forensic document analyzer. You are processing Belarusian Waybills (TTN-1).
 
-YOUR TASK:
-Analyze all images to extract data into a single, consolidated JSON object.
+### INSTRUCTIONS FOR ACCURACY
+1. **Visual Grid Reading:** The "Description/Name" column (Column 2) often contains **multiple lines of text** in a single cell. You MUST read ALL lines in that box (top to bottom) and combine them into a single string.
+2. **Do Not Hallucinate:** If the text is blurry, transcribe what you see visually. Do NOT guess brand names (e.g., do NOT change "ZACATERA" to "Bacardi" just because they look similar).
+3. **Ignore Stamps:** Ignore circular blue stamps or handwritten signatures that overlap the text. Focus only on the printed table data.
 
-LOGIC FLOW:
-1. Scan the "Name of goods" (Наименование товара) column in the main table.
-2. Check for "Attachment Indicators": Look for phrases like "Товар согласно приложения" (Goods according to appendix) or "приложения на X листах" (appendix on X sheets).
-3. IF "Attachment Indicator" IS FOUND:
+### ATTACHMENT LOGIC
+1. Look at the Main Table. Does it have a row saying "Goods according to appendix" (Товар согласно приложения)?
+2. **YES:** 
    - Set "has_attachment": true.
-   - Extract the number of pages mentioned (e.g., "на 2 листах" -> 2) into "attachment_page_count".
-   - IGNORE the row containing the "Attachment Indicator" when building the items list.
-   - Extract line items ONLY from the other images (the detailed attachment pages) and merge them into one single "items" array.
-4. IF "Attachment Indicator" IS NOT FOUND:
+   - Extract the page count.
+   - **STOP** reading items from this page.
+   - Extract items **ONLY** from the other images provided.
+3. **NO:** 
    - Set "has_attachment": false.
-   - Set "attachment_page_count": 0.
-   - Extract all line items normally from the table.
+   - Extract items from this table normally.
 
-DATA EXTRACTION RULES:
-- Extract the document header info (Number, Date, Buyer, Seller, Total Amount) from the main Summary Page (usually the one with signatures and transport details).
-- Combine all line items from all available pages into the 'items' array.
-- Maintain the exact JSON structure below.
-
-JSON STRUCTURE (Return ONLY this JSON, no markdown formatting):
+### OUTPUT JSON (Strict Format)
 {
   "processing_metadata": {
     "has_attachment": boolean,
-    "attachment_page_count": integer,
-    "parsing_notes": "string (e.g., 'Found summary row on page 2, extracted items from pages 1 and 3')"
+    "attachment_page_count": integer
   },
   "document_header": {
     "document_number": "string",
@@ -51,25 +45,41 @@ JSON STRUCTURE (Return ONLY this JSON, no markdown formatting):
   "items": [
     {
       "row_number": "string",
-      "name": "string",
+      "description": "string (The COMPLETE text from Column 2, including Country, Code, and Brand)",
       "unit": "string",
       "quantity": number,
       "price_per_unit": number,
-      "total_cost_no_vat": number,
+      "cost_without_vat": number,
       "vat_rate_percent": number,
       "vat_amount": number,
-      "total_cost_with_vat": number
+      "cost_with_vat": number,
+      "packages_count": number,
+      "mass_tonnes": number,
+      "note": "string"
     }
-  ]
-}`
+  ],
+  "totals": {
+    "total_quantity": number,
+    "total_cost_without_vat": number,
+    "total_vat_amount": number,
+    "total_cost_with_vat": number,
+    "total_packages": number,
+    "total_mass_tonnes": number
+  }
+}
+`
 	payload = append(payload, &genai.Part{Text: promt})
 	var finalResponse string
+	genConfig := &genai.GenerateContentConfig{
+		Temperature:      genai.Ptr(float32(0.1)), // Only pick the single most likely next word
+		ResponseMIMEType: "application/json",
+	}
 	success = false
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 5; i++ {
 		resp, err := client.Models.GenerateContent(*ctx, model, []*genai.Content{
 			{Parts: payload},
-		}, nil)
+		}, genConfig)
 
 		if err == nil {
 			if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
@@ -80,7 +90,7 @@ JSON STRUCTURE (Return ONLY this JSON, no markdown formatting):
 		}
 
 		// If error is 503 (Overloaded), wait and retry
-		fmt.Printf("Attempt %d failed or overloaded. Retrying...\n", i+1)
+		fmt.Printf("Attempt %d failed or overloaded. Retrying...\n\tErr: %v\n", i+1, err)
 		time.Sleep(2 * time.Second)
 	}
 

@@ -18,13 +18,6 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	// PictureTuner.PrepareImprovedImage("/Users/maksimchernyavski/Desktop/КР ТиСПИС-2025/Сканы/Читаемые/0151009/0151009_skewed.jpg")
-	// PictureTuner.PrepareImprovedImage("/Users/maksimchernyavski/Desktop/КР ТиСПИС-2025/Сканы/Оригиналы/0468063/0468063.jpg")
-	// PictureTuner.PrepareImprovedImage("/Users/maksimchernyavski/Desktop/КР ТиСПИС-2025/Сканы/Читаемые/6277215/6277215.jpg")
-	// PictureTuner.PrepareImprovedImage("/Users/maksimchernyavski/Desktop/КР ТиСПИС-2025/Сканы/Читаемые/4646616/4646616.jpg")
-	// PictureTuner.PrepareImprovedImage("/Users/maksimchernyavski/Desktop/КР ТиСПИС-2025/Сканы/Горизонтальные/0216538/02165380001.jpg")
-	// PictureTuner.PrepareImprovedImage("/Users/maksimchernyavski/Desktop/КР ТиСПИС-2025/Сканы/Горизонтальные/0216538/02165380002.jpg")
-
 	// imgBytes, err := os.ReadFile("final_deskewed.png")
 	// if err != nil {
 	// 	log.Fatalln("Can't read file")

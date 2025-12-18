@@ -65,5 +65,5 @@ func healGaps(img *gocv.Mat) { // 2. Prepare Binary Image (White Lines on Black 
 	gocv.Dilate(gridMask, &gridMask, polishKernel)
 
 	// Debug: Save the grid to see if lines are solid
-	gocv.IMWrite("debug_solid_grid.bmp", gridMask)
+	// gocv.IMWrite("debug_solid_grid.bmp", gridMask)
 }

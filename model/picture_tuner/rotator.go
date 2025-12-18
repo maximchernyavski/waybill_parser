@@ -58,10 +58,10 @@ func fixOrientation(img gocv.Mat) gocv.Mat {
 			// If detected as 270 CW (Left), we rotate 90 CW to fix
 			gocv.Rotate(img, &corrected, gocv.Rotate90CounterClockwise)
 		}
-		gocv.IMWrite("fixed_rotation.bmp", corrected)
+		// gocv.IMWrite("fixed_rotation.bmp", corrected)
 		return corrected.Clone()
 	} else {
-		gocv.IMWrite("fixed_rotation.bmp", img)
+		// gocv.IMWrite("fixed_rotation.bmp", img)
 		return img.Clone()
 	}
 }
