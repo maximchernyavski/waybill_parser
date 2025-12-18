@@ -1,6 +1,6 @@
 .DS_STORE
 
-secrets.env
+secret.env
 
 final_deskewed.bmp
 fixed_rotation.bmp
