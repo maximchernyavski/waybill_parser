@@ -1,0 +1,3 @@
+package PictureParser
+
+func GetData() {}
