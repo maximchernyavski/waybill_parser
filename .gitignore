@@ -1,1 +1,2 @@
 .DS_STORE
+model/secrets.env
