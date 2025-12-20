@@ -190,7 +190,6 @@ const PreviewBlock = ({ data, setData }) => {
 
   // --- Update Helpers ---
 
-  // Update top-level header fields (e.g. document_number)
   const updateHeaderField = (field, value) => {
     setData(prev => ({
       ...prev,
@@ -198,9 +197,7 @@ const PreviewBlock = ({ data, setData }) => {
     }));
   };
 
-  // Update nested info fields (sender_info / receiver_info)
   const updateEntityInfo = (entityKey, field, value) => {
-    // entityKey: 'sender_info' or 'receiver_info'
     setData(prev => ({
       ...prev,
       document_header: {
@@ -213,14 +210,12 @@ const PreviewBlock = ({ data, setData }) => {
     }));
   };
 
-  // Update items array
   const updateItem = (index, field, value) => {
     const newItems = [...data.items];
     newItems[index] = { ...newItems[index], [field]: value };
     setData(prev => ({ ...prev, items: newItems }));
   };
 
-  // Update totals object
   const updateTotals = (field, value) => {
     setData(prev => ({
       ...prev,
@@ -289,11 +284,12 @@ const PreviewBlock = ({ data, setData }) => {
       fixed: 'left',
       render: (val, _, i) => <Input value={val} onChange={e => updateItem(i, 'row_number', e.target.value)} bordered={false} style={{ textAlign: 'center' }} /> 
     },
+    // CHANGED: Replaced description with 'name'
     { 
-      title: 'Наименование (Описание)', 
-      dataIndex: 'description', 
+      title: 'Наименование', 
+      dataIndex: 'name', 
       width: 250, 
-      render: (val, _, i) => <Input.TextArea autoSize value={val} onChange={e => updateItem(i, 'description', e.target.value)} bordered={false} /> 
+      render: (val, _, i) => <Input.TextArea autoSize value={val} onChange={e => updateItem(i, 'name', e.target.value)} bordered={false} /> 
     },
     { 
       title: 'Ед.', 
@@ -414,7 +410,7 @@ const PreviewBlock = ({ data, setData }) => {
         {/* --- TOTALS --- */}
         {data.totals && (
            <div style={{ marginTop: 20, padding: '15px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: '4px' }}>
-             <Title level={5}>Итого по накладной (Redactable Totals)</Title>
+             <Title level={5}>Итого по накладной</Title>
              <Row gutter={[16, 16]}>
                 <Col span={4}>
                    <Text type="secondary">Всего кол-во</Text>
@@ -482,7 +478,7 @@ const WaybillParser = () => {
     }
   }, [files]);
 
-  // Mocking the NEW JSON Structure
+  // Mocking the NEW JSON Structure with "name" field
   const handleProcessComplete = (data) => {
     const mockData = {
       processing_metadata: {
@@ -505,7 +501,8 @@ const WaybillParser = () => {
       items: [
         {
           row_number: "1",
-          description: "Сметана 24% 400гр пленка (Здравушка)",
+          description: "Сметана 24% 400гр пленка (Здравушка) BY 1000...",
+          name: "Сметана 24% 400гр пленка (Здравушка)", // Cleaned Name
           unit: "шт",
           quantity: 3,
           price_per_unit: 3.72,
@@ -528,7 +525,6 @@ const WaybillParser = () => {
       }
     };
 
-    // Use passed data if available (from real API), otherwise use new mock
     setApiData(data || mockData);
     setCurrent(1);
     message.success('Документ успешно обработан');
@@ -561,7 +557,8 @@ const WaybillParser = () => {
       items.forEach(item => {
         xml += '    <Item>\n';
         xml += `      <RowNumber>${item.row_number}</RowNumber>\n`;
-        xml += `      <Description>${item.description}</Description>\n`;
+        xml += `      <Name>${item.name}</Name>\n`; // Updated to use cleaned name
+        xml += `      <Description>${item.description}</Description>\n`; // Preserving raw description
         xml += `      <Unit>${item.unit}</Unit>\n`;
         xml += `      <Quantity>${item.quantity}</Quantity>\n`;
         xml += `      <Price>${item.price_per_unit}</Price>\n`;
