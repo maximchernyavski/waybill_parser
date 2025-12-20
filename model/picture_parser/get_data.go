@@ -27,6 +27,25 @@ You are a forensic document analyzer. You are processing Belarusian Waybills (TT
 3. **UNP (Tax ID):** 
    - Look for the 9-digit number near the extracted Name.
 
+### NAME CLEANING RULES (Crucial):
+For every row, you must generate TWO fields for Column 2:
+1. "description": The verbatim text including all codes.
+2. "name": A cleaned version based on these rules:
+   - **KEEP:** Product type, Brand name, Taste/Type (Dry/Semi-dry), Alcohol %, Volume, and **Country of Origin** (Страна происхождения).
+   - **REMOVE:** Internal SKU numbers at the start (e.g., "27473..."), Barcodes (ш/к), GTIN, Customs Codes (ТН ВЭД, ОКРБ).
+   - **REMOVE:** "Country of Import" (Страна ввоза) - only keep Origin.
+   - **FORMAT:** Keep it clean and readable.
+
+#### EXAMPLES OF "SHORT_NAME" GENERATION:
+**Input:** "Настойка горькая ЦАРСКАЯ ОРИГИНАЛЬНАЯ Ваниль/ Czar's Original Vanilla, 38%, 0,5л; страна ввоза - Россия; страна происхождения - Россия; ш/к 4603514015056; ОКРБ 11.01.10.853;"
+**Output:** "Настойка горькая ЦАРСКАЯ ОРИГИНАЛЬНАЯ Ваниль, 38%, 0,5л; страна происхождения - Россия;"
+
+**Input:** "274731523 Водка "MAD DOG", чистая 40%, 0.5л, Беларусь.; ш/к 4813852006696; GTIN 4813852006696"
+**Output:** "Водка "MAD DOG", чистая 40%, 0.5л, Беларусь.;"
+
+**Input:** "Вино виноградное натуральное St. Giorgio Primitivo Puglia / Сэйнт Джорджио Примитиво Апулия выдержанное... категория IGT, 13% 0,75л; страна ввоза - Италия; страна происхождения - Италия; ш/к 800215..."
+**Output:** "Вино виноградное натуральное St. Giorgio Primitivo Puglia, выдержанное, красное полусухое, 13% 0,75л; страна происхождения - Италия;"
+
 ### INSTRUCTIONS FOR ACCURACY
 1. **Visual Grid Reading:** The "Description/Name" column (Column 2) often contains **multiple lines of text** in a single cell. You MUST read ALL lines in that box (top to bottom) and combine them into a single string.
 2. **Do Not Hallucinate:** If the text is blurry, transcribe what you see visually. Do NOT guess brand names (e.g., do NOT change "ZACATERA" to "Bacardi" just because they look similar).
@@ -66,6 +85,7 @@ You are a forensic document analyzer. You are processing Belarusian Waybills (TT
     {
       "row_number": "string",
       "description": "string (The COMPLETE text from Column 2, including Country, Code, and Brand)",
+	  "name": "string(The cleaned name based on rules above)",
       "unit": "string",
       "quantity": number,
       "price_per_unit": number,
