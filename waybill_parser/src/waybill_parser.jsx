@@ -85,6 +85,8 @@ const WaybillParser = () => {
       }
     };
 
+    console.log("Data received ===>", data)
+
     setApiData(data || mockData);
     setCurrent(1);
     message.success('Документ успешно обработан');
