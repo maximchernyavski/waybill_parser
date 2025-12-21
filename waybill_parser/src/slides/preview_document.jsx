@@ -7,12 +7,19 @@ import {
   Divider,
   Spin
 } from 'antd';
-import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
-const PreviewTable = ({data, setData}) => {
-    const updateHeaderField = (field, value) => {
+
+const PreviewBlock = ({ data, setData }) => {
+  
+  if (!data || !data.document_header) {
+    return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
+  }
+
+  // --- Update Helpers ---
+
+  const updateHeaderField = (field, value) => {
     setData(prev => ({
       ...prev,
       document_header: { ...prev.document_header, [field]: value }
@@ -108,7 +115,7 @@ const PreviewTable = ({data, setData}) => {
     },
     // CHANGED: Replaced description with 'name'
     { 
-      title: 'Наименование', 
+      title: 'Наименование (Cleaned)', 
       dataIndex: 'name', 
       width: 250, 
       render: (val, _, i) => <Input.TextArea autoSize value={val} onChange={e => updateItem(i, 'name', e.target.value)} bordered={false} /> 
@@ -264,24 +271,6 @@ const PreviewTable = ({data, setData}) => {
       </div>
     </div>
   );
-}
-
-const FalseSpinner = () => {
-    return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
-}
-
-const PreviewBlock = ({ data, setData }) => {
-    const [needTable, setNeedTable] = useState(false)
-
-    useEffect(() => {
-        if (!data || !data.document_header) {
-            setNeedTable(false)
-        } else {  
-            setNeedTable(true)  
-        }
-    }, [data])
-
-    return needTable ? <PreviewTable data={data} setData={setData} /> : FalseSpinner
 };
 
 export default PreviewBlock

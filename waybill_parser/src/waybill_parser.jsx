@@ -183,20 +183,43 @@ const WaybillParser = () => {
     }
   };
 
-  const steps = [
-    { 
-      title: 'Выберите документы', 
-      content: <SelectDocument 
-                 files={files} 
-                 setFiles={setFiles} 
-                 onProcess={handleProcessComplete} 
-                 isProcessing={isProcessing}
-                 setIsProcessing={setIsProcessing}
-               /> 
-    },
-    { title: 'Предпросмотр', content: <PreviewBlock data={apiData} setData={setApiData} /> },
-    { title: 'Экспорт', content: <ExportBlock onExport={handleExport} /> }
+    const steps = [
+    { title: 'Выберите документы', disabled: false },
+    { title: 'Предпросмотр', disabled: !apiData },
+    { title: 'Экспорт', disabled: !apiData }
   ];
+
+  // 2. CREATE A RENDER FUNCTION
+  // This ensures PreviewBlock always gets the FRESH apiData from state
+  const renderStepContent = () => {
+    switch (current) {
+      case 0:
+        return (
+          <SelectDocument 
+            files={files} 
+            setFiles={setFiles} 
+            onProcess={handleProcessComplete} 
+            isProcessing={isProcessing}
+            setIsProcessing={setIsProcessing}
+          />
+        );
+      case 1:
+        return (
+          <PreviewBlock 
+            data={apiData} 
+            setData={setApiData} 
+          />
+        );
+      case 2:
+        return (
+          <ExportBlock 
+            onExport={handleExport} 
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
@@ -212,7 +235,7 @@ const WaybillParser = () => {
               <Step 
                 key={s.title} 
                 title={s.title} 
-                disabled={i > 0 && !apiData} 
+                disabled={s.disabled} // Use the new disabled property logic
                 style={{ cursor: isProcessing ? 'not-allowed' : 'pointer' }}
               />
             ))}
@@ -224,7 +247,8 @@ const WaybillParser = () => {
         <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: '64px' }} />
         
         <Content style={{ padding: '24px', height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
-          {steps[current].content}
+          {/* 3. CALL THE RENDER FUNCTION HERE */}
+          {renderStepContent()}
         </Content>
       </Layout>
     </Layout>
