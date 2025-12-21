@@ -89,6 +89,7 @@ const SelectDocument = ({ files, setFiles, onProcess, isProcessing, setIsProcess
           background: isProcessing ? '#f5f5f5' : '#fff', 
           borderRadius: '8px', 
           marginBottom: 20,
+          maxHeight: '70%',
           cursor: isProcessing ? 'not-allowed' : 'pointer'
         }}
       >
@@ -96,7 +97,7 @@ const SelectDocument = ({ files, setFiles, onProcess, isProcessing, setIsProcess
           <InboxOutlined style={{ color: isProcessing ? '#ccc' : BRAND_COLOR }} />
         </p>
         <p className="ant-upload-text" style={{ color: isProcessing ? '#999' : undefined }}>
-          {isProcessing ? 'Обработка...' : 'Кликните или перетащите файлы (PDF, JPG, PNG)'}
+          {isProcessing ? 'Обработка...' : 'Кликните или перетащите файлы (PNG)'}
         </p>
         <p className="ant-upload-hint">Поддерживается массовая загрузка</p>
       </Dragger>
