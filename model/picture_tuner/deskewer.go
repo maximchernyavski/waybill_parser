@@ -32,7 +32,7 @@ func deskew(img *gocv.Mat) {
 		rotateImage(img, angle)
 	}
 
-	gocv.IMWrite("final_deskewed.bmp", *img)
+	// gocv.IMWrite("final_deskewed.bmp", *img)
 }
 
 // rotateImage applies the rotation and updates the Mat pointer

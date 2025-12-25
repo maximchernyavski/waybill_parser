@@ -1,5 +1,9 @@
 .DS_STORE
 
-final_deskewed.bmp
+secret.env
+
+final_deskewed.png
+fixed_rotation.bmp
 debug_detected_cells.bmp
 debug_solid_grid.bmp
+debug.bmp
