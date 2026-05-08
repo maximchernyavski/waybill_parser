@@ -97,13 +97,13 @@ const SelectDocument = ({ files, setFiles, onProcess, isProcessing, setIsProcess
           <InboxOutlined style={{ color: isProcessing ? '#ccc' : BRAND_COLOR }} />
         </p>
         <p className="ant-upload-text" style={{ color: isProcessing ? '#999' : undefined }}>
-          {isProcessing ? 'Обработка...' : 'Кликните или перетащите файлы (PNG)'}
+          {isProcessing ? 'Обработка...' : 'Кликните или перетащите файлы (PNG, JPEG, JPG)'}
         </p>
         <p className="ant-upload-hint">Поддерживается массовая загрузка</p>
       </Dragger>
 
       {files.length > 0 && (
-        <Card bodyStyle={{ padding: '0' }} style={{ overflow: 'hidden' }}>
+        <Card styles={{ body: { padding: '0' } }} style={{ overflow: 'hidden' }}>
           <div style={{ 
             height: '350px', 
             overflowY: 'auto', 

@@ -9,6 +9,8 @@ import SelectDocument from './slides/select_documents';
 import PreviewBlock from './slides/preview_document';
 import ExportBlock from './slides/export_document';
 
+import HistoryModal from './slides/history_modal';
+
 const { Header, Content, Sider } = Layout;
 const { Step } = Steps;
 
@@ -94,23 +96,37 @@ const WaybillParser = () => {
 
   const generateXML = (data) => {
     const { document_header, items, totals } = data;
+    const isAct = !!document_header.contractor_info;
     
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<Waybill>\n';
+    xml += isAct ? '<Act>\n' : '<Waybill>\n';
     
     // Header
     xml += '  <Header>\n';
-    xml += `    <DocumentNumber>${document_header.document_number}</DocumentNumber>\n`;
-    xml += `    <DocumentDate>${document_header.document_date}</DocumentDate>\n`;
-    xml += `    <Sender>\n`;
-    xml += `      <Name>${document_header.sender_info?.name || ''}</Name>\n`;
-    xml += `      <UNP>${document_header.sender_info?.unp || ''}</UNP>\n`;
-    xml += `    </Sender>\n`;
-    xml += `    <Receiver>\n`;
-    xml += `      <Name>${document_header.receiver_info?.name || ''}</Name>\n`;
-    xml += `      <UNP>${document_header.receiver_info?.unp || ''}</UNP>\n`;
-    xml += `    </Receiver>\n`;
-    xml += `    <TotalAmount>${document_header.total_amount_with_vat}</TotalAmount>\n`;
+    xml += `    <DocumentNumber>${document_header.document_number || ''}</DocumentNumber>\n`;
+    xml += `    <DocumentDate>${document_header.document_date || ''}</DocumentDate>\n`;
+    
+    if (isAct) {
+      xml += `    <Contract>${document_header.contract_info || ''}</Contract>\n`;
+      xml += `    <Contractor>\n`;
+      xml += `      <Name>${document_header.contractor_info?.name || ''}</Name>\n`;
+      xml += `      <UNP>${document_header.contractor_info?.unp || ''}</UNP>\n`;
+      xml += `    </Contractor>\n`;
+      xml += `    <Customer>\n`;
+      xml += `      <Name>${document_header.customer_info?.name || ''}</Name>\n`;
+      xml += `      <UNP>${document_header.customer_info?.unp || ''}</UNP>\n`;
+      xml += `    </Customer>\n`;
+    } else {
+      xml += `    <Sender>\n`;
+      xml += `      <Name>${document_header.sender_info?.name || ''}</Name>\n`;
+      xml += `      <UNP>${document_header.sender_info?.unp || ''}</UNP>\n`;
+      xml += `    </Sender>\n`;
+      xml += `    <Receiver>\n`;
+      xml += `      <Name>${document_header.receiver_info?.name || ''}</Name>\n`;
+      xml += `      <UNP>${document_header.receiver_info?.unp || ''}</UNP>\n`;
+      xml += `    </Receiver>\n`;
+    }
+    
     xml += '  </Header>\n';
 
     // Items
@@ -118,19 +134,28 @@ const WaybillParser = () => {
     if (Array.isArray(items)) {
       items.forEach(item => {
         xml += '    <Item>\n';
-        xml += `      <RowNumber>${item.row_number}</RowNumber>\n`;
-        xml += `      <Name>${item.name}</Name>\n`; // Updated to use cleaned name
-        xml += `      <Description>${item.description}</Description>\n`; // Preserving raw description
-        xml += `      <Unit>${item.unit}</Unit>\n`;
-        xml += `      <Quantity>${item.quantity}</Quantity>\n`;
-        xml += `      <Price>${item.price_per_unit}</Price>\n`;
-        xml += `      <CostWithoutVat>${item.cost_without_vat}</CostWithoutVat>\n`;
-        xml += `      <VatRate>${item.vat_rate_percent}</VatRate>\n`;
-        xml += `      <VatAmount>${item.vat_amount}</VatAmount>\n`;
-        xml += `      <CostWithVat>${item.cost_with_vat}</CostWithVat>\n`;
-        xml += `      <Packages>${item.packages_count}</Packages>\n`;
-        xml += `      <Mass>${item.mass_tonnes}</Mass>\n`;
-        xml += `      <Note>${item.note}</Note>\n`;
+        xml += `      <RowNumber>${item.row_number || ''}</RowNumber>\n`;
+        if (isAct) {
+          xml += `      <ServiceCode>${item.service_code || ''}</ServiceCode>\n`;
+        }
+        xml += `      <Name>${item.name || ''}</Name>\n`;
+        if (!isAct) {
+          xml += `      <Description>${item.description || ''}</Description>\n`;
+        }
+        xml += `      <Unit>${item.unit || ''}</Unit>\n`;
+        xml += `      <Quantity>${item.quantity || 0}</Quantity>\n`;
+        xml += `      <Price>${item.price_per_unit || 0}</Price>\n`;
+        xml += `      <CostWithoutVat>${item.cost_without_vat || 0}</CostWithoutVat>\n`;
+        xml += `      <VatRate>${isAct ? (item.vat_rate || '') : (item.vat_rate_percent || 0)}</VatRate>\n`;
+        xml += `      <VatAmount>${item.vat_amount || 0}</VatAmount>\n`;
+        xml += `      <CostWithVat>${item.cost_with_vat || 0}</CostWithVat>\n`;
+        
+        if (!isAct) {
+          xml += `      <Packages>${item.packages_count || 0}</Packages>\n`;
+          xml += `      <Mass>${item.mass_tonnes || 0}</Mass>\n`;
+          xml += `      <Note>${item.note || ''}</Note>\n`;
+        }
+        
         xml += '    </Item>\n';
       });
     }
@@ -139,16 +164,18 @@ const WaybillParser = () => {
     // Totals
     if (totals) {
       xml += '  <Totals>\n';
-      xml += `    <TotalQuantity>${totals.total_quantity}</TotalQuantity>\n`;
-      xml += `    <TotalCostNoVat>${totals.total_cost_without_vat}</TotalCostNoVat>\n`;
-      xml += `    <TotalVat>${totals.total_vat_amount}</TotalVat>\n`;
-      xml += `    <TotalCostWithVat>${totals.total_cost_with_vat}</TotalCostWithVat>\n`;
-      xml += `    <TotalPackages>${totals.total_packages}</TotalPackages>\n`;
-      xml += `    <TotalMass>${totals.total_mass_tonnes}</TotalMass>\n`;
+      if (!isAct) {
+        xml += `    <TotalQuantity>${totals.total_quantity || 0}</TotalQuantity>\n`;
+        xml += `    <TotalPackages>${totals.total_packages || 0}</TotalPackages>\n`;
+        xml += `    <TotalMass>${totals.total_mass_tonnes || 0}</TotalMass>\n`;
+      }
+      xml += `    <TotalCostNoVat>${totals.total_cost_without_vat || 0}</TotalCostNoVat>\n`;
+      xml += `    <TotalVat>${totals.total_vat_amount || 0}</TotalVat>\n`;
+      xml += `    <TotalCostWithVat>${totals.total_cost_with_vat || 0}</TotalCostWithVat>\n`;
       xml += '  </Totals>\n';
     }
 
-    xml += '</Waybill>';
+    xml += isAct ? '</Act>' : '</Waybill>';
     return xml;
   };
 
@@ -224,22 +251,27 @@ const WaybillParser = () => {
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Sider width={260} theme="light" style={{ borderRight: '1px solid #f0f0f0' }}>
-        <Logo />
-        <div style={{ padding: '30px 20px', opacity: isProcessing ? 0.5 : 1, transition: 'opacity 0.3s' }}>
-          <Steps
-            direction="vertical"
-            current={current}
-            onChange={handleStepChange}
-          >
-            {steps.map((s, i) => (
-              <Step 
-                key={s.title} 
-                title={s.title} 
-                disabled={s.disabled} // Use the new disabled property logic
-                style={{ cursor: isProcessing ? 'not-allowed' : 'pointer' }}
-              />
-            ))}
-          </Steps>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Logo />
+          <div style={{ flex: 1, padding: '30px 20px', opacity: isProcessing ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+            <Steps
+              direction="vertical"
+              current={current}
+              onChange={handleStepChange}
+            >
+              {steps.map((s, i) => (
+                <Step 
+                  key={s.title} 
+                  title={s.title} 
+                  disabled={s.disabled}
+                  style={{ cursor: isProcessing ? 'not-allowed' : 'pointer' }}
+                />
+              ))}
+            </Steps>
+          </div>
+          <div style={{ padding: '20px', background: BRAND_COLOR, marginTop: 'auto' }}>
+             <HistoryModal />
+          </div>
         </div>
       </Sider>
 
