@@ -2,6 +2,8 @@ package PictureTuner
 
 import (
 	"image"
+	_ "image/jpeg"
+	_ "image/png"
 
 	"gocv.io/x/gocv"
 )

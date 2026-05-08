@@ -3,6 +3,8 @@ package PictureTuner
 import (
 	"fmt"
 	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"math"
 
 	"github.com/otiai10/gosseract"

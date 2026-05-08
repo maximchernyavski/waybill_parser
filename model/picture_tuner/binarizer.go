@@ -3,6 +3,8 @@ package PictureTuner
 import (
 	"fmt"
 	"image"
+	_ "image/jpeg"
+	_ "image/png"
 
 	"gocv.io/x/gocv"
 )
@@ -35,7 +37,7 @@ func binarizeForTesseract(mat *gocv.Mat) {
 
 	variation := stdDev.GetDoubleAt(0, 0)
 	fmt.Println("Variation ====> ", variation)
-	const threshold = 19
+	const threshold = 36
 
 	if variation < threshold {
 		// --- WAVY IMAGE (Low Variance) ---

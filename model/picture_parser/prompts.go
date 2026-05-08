@@ -1,16 +1,6 @@
 package PictureParser
 
-import (
-	"context"
-	"fmt"
-	"log"
-	"time"
-
-	"google.golang.org/genai"
-)
-
-func GetData(ctx *context.Context, client *genai.Client, payload []*genai.Part, model string) (response string, success bool) {
-	promt := `
+var promptTTN string = `
 You are a forensic document analyzer. You are processing Belarusian Waybills (TTN-1).
 
 ### HEADER EXTRACTION RULES (STRICT):
@@ -108,36 +98,93 @@ For every row, you must generate TWO fields for Column 2:
   }
 }
 `
-	payload = append(payload, &genai.Part{Text: promt})
-	var finalResponse string
-	genConfig := &genai.GenerateContentConfig{
-		Temperature:      genai.Ptr(float32(0.1)), // Only pick the single most likely next word
-		ResponseMIMEType: "application/json",
-	}
-	success = false
 
-	for i := 0; i < 5; i++ {
-		resp, err := client.Models.GenerateContent(*ctx, model, []*genai.Content{
-			{Parts: payload},
-		}, genConfig)
+var promptAct = `
+You are a highly precise forensic document analyzer and accountant. Your task is to process "Acts of Completed Works/Services" (Акт выполненных работ / оказанных услуг), which may span multiple pages.
 
-		if err == nil {
-			if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
-				finalResponse = resp.Candidates[0].Content.Parts[0].Text
-				success = true
-				break
-			}
-		}
+### MULTI-PAGE PROCESSING RULES:
+1. The document may consist of multiple images (pages). Treat them as a single continuous document.
+2. **Table Continuation:** The main table of services may break at the bottom of one page and continue on the next. You MUST seamlessly extract all rows across all pages into a single 'items' array.
+3. **Avoid Duplicates:** Be careful at page breaks. Do not duplicate a row if a cell is split across two pages; combine the text logically.
+4. **Totals:** The final "Итого" (Totals) will usually be located on the very last page. Look for them there.
 
-		// If error is 503 (Overloaded), wait and retry
-		fmt.Printf("Attempt %d failed or overloaded. Retrying...\n\tErr: %v\n", i+1, err)
-		time.Sleep(2 * time.Second)
-	}
+### HEADER EXTRACTION RULES (STRICT):
+1. **Document Info:**
+   - Locate the main title (e.g., "Акт №... от...").
+   - Extract the Document Number and the Date.
+2. **Contract Info (Номер договора):**
+   - Look for words like "Основание:", "по договору №", or "Договор".
+   - Extract the Contract Number and Date if present.
+3. **Locate "Исполнитель" (Contractor / Provider):**
+   - Find the exact printed label: "Исполнитель:" or "Подрядчик:".
+   - Extract the company name.
+   - Look for the 9-digit Tax ID (УНП / ИНН) associated with the Contractor.
+4. **Locate "Заказчик" (Customer / Client):**
+   - Find the exact printed label: "Заказчик:".
+   - Extract the company name and its 9-digit Tax ID (УНП / ИНН).
 
-	if !success {
-		log.Println("Google Gemini API is overloaded or failed. Please try again.")
-		return "", success
-	}
+### TABLE EXTRACTION RULES:
+You must extract data from the main table representing the services provided.
+1. **Code (Код услуги):** Often the first or second column (Номенклатура/Код). If there is no code, return null.
+2. **Name (Наименование):** The description of the service. Services often have multi-line descriptions. Read ALL lines in the cell top-to-bottom and combine them into a single clean string.
+3. **Financial Logic & VAT (НДС):**
+   - **price_per_unit (Цена):** Price for 1 unit without VAT.
+   - **cost_without_vat (Сумма без НДС):** Quantity * Price.
+   - **vat_rate (Ставка НДС):** If the document says "Без НДС" or "-", output "Без НДС". Otherwise, output the percentage (e.g., "20%").
+   - **vat_amount (Сумма НДС):** The calculated tax amount.
+   - **cost_with_vat (Сумма с НДС / Итого):** The final cost for that specific row.
 
-	return finalResponse, success
+### INSTRUCTIONS FOR ACCURACY:
+1. **Do Not Hallucinate:** If a field is empty or missing in the table, return 'null'. Do not calculate missing sums yourself unless explicitly asked; transcribe what is visually printed.
+2. **Ignore Stamps & Signatures:** Ignore circular blue stamps (Печать) or handwritten squiggles that overlap the text.
+
+### OUTPUT JSON (Strict Format)
+You MUST return ONLY a valid JSON object. DO NOT include any greetings, explanations, step-by-step thinking, or markdown formatting outside the JSON block.
+
+{
+  "processing_metadata": {
+    "is_multi_page": boolean,
+    "pages_processed": integer
+  },
+  "document_header": {
+    "document_number": "string",
+    "document_date": "string",
+    "contract_info": "string (e.g., '№ 12/45 от 10.05.2023' or null)",
+    "contractor_info": {
+      "name": "string",
+      "unp": "string (The Tax ID)"
+    },
+    "customer_info": {
+      "name": "string",
+      "unp": "string (The Tax ID)"
+    }
+  },
+  "items":[
+    {
+      "row_number": "string or number",
+      "service_code": "string (if present, else null)",
+      "name": "string (The complete description of the service/work)",
+      "quantity": number,
+      "unit": "string (e.g., 'шт', 'мес', 'усл')",
+      "price_per_unit": number,
+      "cost_without_vat": number,
+      "vat_rate": "string (e.g., '20%' or 'Без НДС')",
+      "vat_amount": number,
+      "cost_with_vat": number
+    }
+  ],
+  "totals": {
+    "total_cost_without_vat": number,
+    "total_vat_amount": number,
+    "total_cost_with_vat": number
+  }
 }
+`
+
+var promptRouter = `
+Look at this document. Determine its type.
+Reply with EXACTLY ONE WORD from this list:
+- TTN (if it is a Товарно-транспортная накладная / ТТН-1)
+- ACT (if it is an Акт выполненных работ / оказанных услуг)
+- UNKNOWN (if it is neither)
+`
