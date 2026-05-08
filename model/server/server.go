@@ -71,7 +71,7 @@ func handleDocumentUpload(c *gin.Context) {
 	var images []string
 
 	// Loop through uploaded images and append them
-	for i, fileHeader := range files {
+	for _, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open uploaded file"})
@@ -120,7 +120,7 @@ func handleDocumentUpload(c *gin.Context) {
 			}
 		}
 
-		gocv.IMWrite(fmt.Sprintf("debug_%d.bmp", i), mat)
+		// gocv.IMWrite(fmt.Sprintf("debug_%d.bmp", i), mat)
 		fileBytesBuff, err := gocv.IMEncode(".png", mat)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to convert file bytes"})
